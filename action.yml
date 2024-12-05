@@ -26,23 +26,25 @@ runs:
     - name: Set variables
       shell: bash
       run: |
-        if [ -n "${{ inputs.git_ref }}" ]; then
+        if [ "${{ inputs.git_ref }}" != "" ]; then
           echo "git_ref=${{ inputs.git_ref }}" >> $GITHUB_OUTPUT
-        elif [ -n "${{ github.sha }}" ]; then
+        elif [ "${{ github.sha }}" != "" ]; then
           echo "git_ref=${{ github.sha }}" >> $GITHUB_OUTPUT
         else
           echo "git_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
         fi
 
-        if [ -n "${{ inputs.message }}" ]; then
+        if [ "${{ inputs.message }}" != "" ]; then
           echo "message=${{ inputs.message }}" >> $GITHUB_OUTPUT
-        elif [ -n "${{ github.event.head_commit.message }}" ]; then
+        elif [ "${{ github.event.head_commit.message }}" != "" ]; then
           echo "message=${{ github.event.head_commit.message }}" >> $GITHUB_OUTPUT
+        elif [ "${{ ${{ github.event.workflow_run.head_commit.message }}" != "" ]; then
+          echo "message=${{ github.event.workflow_run.head_commit.message }}" >> $GITHUB_OUTPUT
         else
           echo "message=${{ github.event.name }}" >> $GITHUB_OUTPUT
         fi
 
-        if [ -n "${{ inputs.user }}" ]; then
+        if [ "${{ inputs.user }}" != "" ]; then
           echo "user=${{ inputs.user }}" >> $GITHUB_OUTPUT
           export ACTOR="${{ inputs.user }}"
         else
@@ -50,7 +52,7 @@ runs:
           export ACTOR="${{ github.actor }}"
         fi
 
-        if [ -n "${{ inputs.user_avatar_url }}" ]; then
+        if [ "${{ inputs.user_avatar_url }}" != "" ]; then
           echo "user_avatar_url=${{ inputs.user_avatar_url }}" >> $GITHUB_OUTPUT
         else
           echo "user_avatar_url=https://github.com/$ACTOR.png" >> $GITHUB_OUTPUT
@@ -65,5 +67,5 @@ runs:
           --message "${{ steps.set-variables.outputs.message }}" \
           --user "${{ steps.set-variables.outputs.user }}" \
           --user-avatar-url "${{ steps.set-variables.outputs.user_avatar_url }}" \
-          --timeout "${{ inputs.timeout }}" \
+          --timeout "${{ inputs.timeout }}s" \
           --follow
