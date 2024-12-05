@@ -1,0 +1,46 @@
+name: 'Nhost Deploy'
+description: 'Deploys an Nhost Project to app.nhost.io'
+inputs:
+  subdomain:
+    description: 'Nhost subdomain'
+    required: true
+  git_ref:
+    description: 'Git ref to deploy. Defaults to github.sha if available, otherwise github.ref'
+    required: false
+  message:
+    description: 'Deploy message. Defaults to github.event.head_commit.message if available, otherwise github.event_name'
+    required: false
+  user:
+    description: 'User that triggered the deploy. Defaults to github.actor'
+    required: false
+  user_avatar_url:
+    description: 'User avatar URL. Defaults to https://github.com/{{ github.actor }}.png'
+    required: false
+  timeout:
+    description: 'Timeout in seconds'
+    required: false
+    default: '300'
+runs:
+  using: "composite"
+  steps:
+    - name: Set variables
+      shell: bash
+      run: |
+        {
+          echo "git_ref=${inputs.git_ref:-${GITHUB_SHA:-$GITHUB_REF}}"
+          echo "message=${inputs.message:-${github.event.head_commit.message:-$GITHUB_EVENT_NAME}}"
+          echo "user=${inputs.user:-$GITHUB_ACTOR}"
+          echo "user_avatar_url=${inputs.user_avatar_url:-https://github.com/$GITHUB_ACTOR.png}"
+        } >> $GITHUB_OUTPUT
+
+    - name: Deploy
+      shell: bash
+      run: |
+        nhost deployments new \
+          --subdomain "${{ inputs.subdomain }}" \
+          --ref "${{ steps.set-variables.outputs.git_ref }}" \
+          --message "${{ steps.set-variables.outputs.message }}" \
+          --user "${{ steps.set-variables.outputs.user }}" \
+          --user-avatar-url "${{ steps.set-variables.outputs.user_avatar_url }}" \
+          --timeout "${{ inputs.timeout }}" \
+          --follow
