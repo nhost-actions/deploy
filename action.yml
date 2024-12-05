@@ -32,7 +32,7 @@ runs:
         GITHUB_REF: ${{ github.ref }}
         INPUT_MESSAGE: ${{ inputs.message }}
         COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-        EVENT_NAME: ${{ github.event.name }}
+        EVENT_NAME: ${{ github.event_name }}
         INPUT_USER: ${{ inputs.user }}
         GITHUB_ACTOR: ${{ github.actor }}
         INPUT_AVATAR_URL: ${{ inputs.user_avatar_url }}
