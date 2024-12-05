@@ -38,7 +38,7 @@ runs:
           echo "message=${{ inputs.message }}" >> $GITHUB_OUTPUT
         elif [ "${{ github.event.head_commit.message }}" != "" ]; then
           echo "message=${{ github.event.head_commit.message }}" >> $GITHUB_OUTPUT
-        elif [ "${{ ${{ github.event.workflow_run.head_commit.message }}" != "" ]; then
+        elif [ "${{ github.event.workflow_run.head_commit.message }}" != "" ]; then
           echo "message=${{ github.event.workflow_run.head_commit.message }}" >> $GITHUB_OUTPUT
         else
           echo "message=${{ github.event.name }}" >> $GITHUB_OUTPUT
