@@ -25,35 +25,47 @@ runs:
   steps:
     - name: Set variables
       shell: bash
+      id: set-variables
+      env:
+        INPUT_GIT_REF: ${{ inputs.git_ref }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_REF: ${{ github.ref }}
+        INPUT_MESSAGE: ${{ inputs.message }}
+        COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        EVENT_NAME: ${{ github.event.name }}
+        INPUT_USER: ${{ inputs.user }}
+        GITHUB_ACTOR: ${{ github.actor }}
+        INPUT_AVATAR_URL: ${{ inputs.user_avatar_url }}
       run: |
-        if [ "${{ inputs.git_ref }}" != "" ]; then
-          echo "git_ref=${{ inputs.git_ref }}" >> $GITHUB_OUTPUT
-        elif [ "${{ github.sha }}" != "" ]; then
-          echo "git_ref=${{ github.sha }}" >> $GITHUB_OUTPUT
+        if [ -n "$INPUT_GIT_REF" ]; then
+          echo "git_ref=$INPUT_GIT_REF" >> $GITHUB_OUTPUT
+          export GIT_REF=$INPUT_GIT_REF
+        elif [ -n "$GITHUB_SHA" ]; then
+          echo "git_ref=$GITHUB_SHA" >> $GITHUB_OUTPUT
+          export GIT_REF=$GITHUB_SHA
         else
-          echo "git_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
+          echo "git_ref=$GITHUB_REF" >> $GITHUB_OUTPUT
+          export GIT_REF=$GITHUB_REF
         fi
 
-        if [ "${{ inputs.message }}" != "" ]; then
-          echo "message=${{ inputs.message }}" >> $GITHUB_OUTPUT
-        elif [ "${{ github.event.head_commit.message }}" != "" ]; then
-          echo "message=${{ github.event.head_commit.message }}" >> $GITHUB_OUTPUT
-        elif [ "${{ github.event.workflow_run.head_commit.message }}" != "" ]; then
-          echo "message=${{ github.event.workflow_run.head_commit.message }}" >> $GITHUB_OUTPUT
+        if [ -n "$INPUT_USER" ]; then
+          echo "user=$INPUT_USER" >> $GITHUB_OUTPUT
+          ACTOR="$INPUT_USER"
         else
-          echo "message=${{ github.event.name }}" >> $GITHUB_OUTPUT
+          echo "user=$GITHUB_ACTOR" >> $GITHUB_OUTPUT
+          ACTOR="$GITHUB_ACTOR"
         fi
 
-        if [ "${{ inputs.user }}" != "" ]; then
-          echo "user=${{ inputs.user }}" >> $GITHUB_OUTPUT
-          export ACTOR="${{ inputs.user }}"
+        if [ -n "$INPUT_MESSAGE" ]; then
+          echo "message=$INPUT_MESSAGE" >> $GITHUB_OUTPUT
+        elif [ -n "$COMMIT_MESSAGE" ]; then
+          echo "message=$COMMIT_MESSAGE" >> $GITHUB_OUTPUT
         else
-          echo "user=${{ github.actor }}" >> $GITHUB_OUTPUT
-          export ACTOR="${{ github.actor }}"
+          echo "message=Deployed $GIT_REF by $ACTOR via $EVENT_NAME" >> $GITHUB_OUTPUT
         fi
 
-        if [ "${{ inputs.user_avatar_url }}" != "" ]; then
-          echo "user_avatar_url=${{ inputs.user_avatar_url }}" >> $GITHUB_OUTPUT
+        if [ -n "$INPUT_AVATAR_URL" ]; then
+          echo "user_avatar_url=$INPUT_AVATAR_URL" >> $GITHUB_OUTPUT
         else
           echo "user_avatar_url=https://github.com/$ACTOR.png" >> $GITHUB_OUTPUT
         fi
