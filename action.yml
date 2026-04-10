@@ -1,0 +1,83 @@
+name: 'Nhost Deploy'
+description: 'Deploys an Nhost Project to app.nhost.io'
+inputs:
+  subdomain:
+    description: 'Nhost subdomain'
+    required: true
+  git_ref:
+    description: 'Git ref to deploy. Defaults to github.sha if available, otherwise github.ref'
+    required: false
+  message:
+    description: 'Deploy message. Defaults to github.event.head_commit.message if available, otherwise github.event_name'
+    required: false
+  user:
+    description: 'User that triggered the deploy. Defaults to github.actor'
+    required: false
+  user_avatar_url:
+    description: 'User avatar URL. Defaults to https://github.com/{{ github.actor }}.png'
+    required: false
+  timeout:
+    description: 'Timeout in seconds'
+    required: false
+    default: '300'
+runs:
+  using: "composite"
+  steps:
+    - name: Set variables
+      shell: bash
+      id: set-variables
+      env:
+        INPUT_GIT_REF: ${{ inputs.git_ref }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_REF: ${{ github.ref }}
+        INPUT_MESSAGE: ${{ inputs.message }}
+        COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        EVENT_NAME: ${{ github.event_name }}
+        INPUT_USER: ${{ inputs.user }}
+        GITHUB_ACTOR: ${{ github.actor }}
+        INPUT_AVATAR_URL: ${{ inputs.user_avatar_url }}
+      run: |
+        if [ -n "$INPUT_GIT_REF" ]; then
+          echo "git_ref=$INPUT_GIT_REF" >> $GITHUB_OUTPUT
+          export GIT_REF=$INPUT_GIT_REF
+        elif [ -n "$GITHUB_SHA" ]; then
+          echo "git_ref=$GITHUB_SHA" >> $GITHUB_OUTPUT
+          export GIT_REF=$GITHUB_SHA
+        else
+          echo "git_ref=$GITHUB_REF" >> $GITHUB_OUTPUT
+          export GIT_REF=$GITHUB_REF
+        fi
+
+        if [ -n "$INPUT_USER" ]; then
+          echo "user=$INPUT_USER" >> $GITHUB_OUTPUT
+          ACTOR="$INPUT_USER"
+        else
+          echo "user=$GITHUB_ACTOR" >> $GITHUB_OUTPUT
+          ACTOR="$GITHUB_ACTOR"
+        fi
+
+        if [ -n "$INPUT_MESSAGE" ]; then
+          echo "message=$INPUT_MESSAGE" >> $GITHUB_OUTPUT
+        elif [ -n "$COMMIT_MESSAGE" ]; then
+          echo "message=$COMMIT_MESSAGE" >> $GITHUB_OUTPUT
+        else
+          echo "message=Deployed $GIT_REF by $ACTOR via $EVENT_NAME" >> $GITHUB_OUTPUT
+        fi
+
+        if [ -n "$INPUT_AVATAR_URL" ]; then
+          echo "user_avatar_url=$INPUT_AVATAR_URL" >> $GITHUB_OUTPUT
+        else
+          echo "user_avatar_url=https://github.com/$ACTOR.png" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Deploy
+      shell: bash
+      run: |
+        nhost deployments new \
+          --subdomain "${{ inputs.subdomain }}" \
+          --ref "${{ steps.set-variables.outputs.git_ref }}" \
+          --message "${{ steps.set-variables.outputs.message }}" \
+          --user "${{ steps.set-variables.outputs.user }}" \
+          --user-avatar-url "${{ steps.set-variables.outputs.user_avatar_url }}" \
+          --timeout "${{ inputs.timeout }}s" \
+          --follow
